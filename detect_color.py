@@ -16,19 +16,23 @@ image = cv2.imread(args["image"])
 
 # define the list of boundaries
 boundaries = [
-	([119, 0, 222], [247, 234, 255]), #pink
-	([0, 5, 100], [169, 56, 247]), #red
-	([232, 232, 225], [247, 247, 247]), #white
-	([0, 0, 0], [25, 25, 25]), #black
-	([27, 46, 45], [173, 222, 158]), #green
-	([86, 51, 107], [237, 116, 195]), #purple
-	([0, 121, 87], [160, 206, 170]), #gray, complicated color
-	([0, 146, 190], [233, 247, 255]), #yellow
-	([36, 0, 50], [255, 80, 80]) #blue
+	([36, 0, 50], [255, 80, 80], '0'), #blue
+	([232, 232, 225], [247, 247, 247], '1'), #white
+	([0, 121, 87], [160, 206, 170], '2'), #gray, complicated color
+	([0, 0, 0], [25, 25, 25], '3'), #black
+	([0, 5, 100], [169, 56, 247], '4'), #red
+	([86, 51, 107], [237, 116, 195], '5'), #purple
+	([119, 0, 222], [247, 234, 255], '6'), #pink
+	([0, 146, 190], [233, 247, 255], '7'), #yellow
+	([27, 46, 45], [173, 222, 158], '8') #green
+
 ]
 
 def calculate():
-	for (lower, upper) in boundaries:
+	pixel_cnt = [0 for _, _, _ in boundaries]
+	for index, tupl in enumerate(boundaries):
+		lower, upper, _ = tupl
+
 		# create NumPy arrays from the boundaries
 		lower = np.array(lower, dtype = "uint8")
 		upper = np.array(upper, dtype = "uint8")
@@ -40,19 +44,20 @@ def calculate():
 		output = cv2.bitwise_and(image, image, mask = mask)
 
 		#get average color
-		pixel_sum, pixel_cnt = [0, 0, 0], 0
+		pixel_sum = [0, 0, 0]
 		for i in range(output.shape[0]):
 			for j in range(output.shape[1]):
-				if output[i,j,0] > 0 and output[i,j,1] > 0 and output[i,j,2] > 0:
+				if output[i,j,0] > 0 or output[i,j,1] > 0 or output[i,j,2] > 0:
 					pixel_sum[0] += output[i,j,0]
 					pixel_sum[1] += output[i,j,1]
 					pixel_sum[2] += output[i,j,2]
 
-					pixel_cnt += 1
-		if pixel_cnt > 0:
-			pixel_sum[0] /= pixel_cnt
-			pixel_sum[1] /= pixel_cnt
-			pixel_sum[2] /= pixel_cnt
+					pixel_cnt[index] += 1
+					print(pixel_cnt[index])
+		if pixel_cnt[index] > 0:
+			pixel_sum[0] /= pixel_cnt[index]
+			pixel_sum[1] /= pixel_cnt[index]
+			pixel_sum[2] /= pixel_cnt[index]
 		else:
 			pixel_sum = [0, 0, 0]
 
@@ -85,7 +90,10 @@ def calculate():
 		elif (pixel_sum[0]>=27 and pixel_sum[0]<=173 and pixel_sum[1]>=46 and pixel_sum[1]<=222 and pixel_sum[2]>=45 and pixel_sum[2]<=158):
 			ans = 8
 			print("green")
-		return(ans)
+
+	sorted_scores = sorted([(x, i) for i, x in enumerate(pixel_cnt)])
+	print(sorted_scores)
+	return boundaries[sorted_scores[-2][1]][2]
 
 calculate()
 # show the images
